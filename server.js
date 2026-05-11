@@ -2,10 +2,10 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
- 
+
 const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
- 
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css',
@@ -15,15 +15,14 @@ const MIME = {
   '.ico': 'image/x-icon',
   '.webp': 'image/webp',
 };
- 
+
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
- 
+
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
- 
-  // API proxy
+
   if (req.method === 'POST' && req.url === '/api/analyze') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -63,16 +62,13 @@ const server = http.createServer(async (req, res) => {
     });
     return;
   }
- 
-  // Serve static files — 先找 public/ 再找根目錄
+
   let urlPath = req.url === '/' ? '/index.html' : req.url;
   let filePath = path.join(__dirname, 'public', urlPath);
-  
-  // 如果 public/ 裡沒有，就從根目錄找
   if (!fs.existsSync(filePath)) {
     filePath = path.join(__dirname, urlPath);
   }
- 
+
   const ext = path.extname(filePath);
   fs.readFile(filePath, (err, data) => {
     if (err) {
@@ -84,7 +80,7 @@ const server = http.createServer(async (req, res) => {
     res.end(data);
   });
 });
- 
+
 server.listen(PORT, () => {
   console.log(`AIRSPACE 伺服器運行中: http://localhost:${PORT}`);
 });
