@@ -1,0 +1,11 @@
+{
+  "name": "airspace-ai-tagger",
+  "version": "1.0.0",
+  "description": "AIRSPACE AI 商品貼標系統",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": { "node": ">=14" }
+}
