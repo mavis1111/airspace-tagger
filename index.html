@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIRSPACE — AI 商品貼標系統</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0E0E0F;--bg2:#161618;--bg3:#1E1E21;--bg4:#27272B;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#F0EFE8;--text2:#A09E9A;--text3:#6A6865;--pink:#D4537E;--pkl:rgba(212,83,126,0.15);--green:#1D9E75;--grl:rgba(29,158,117,0.15);--amber:#C4861A;--aml:rgba(196,134,26,0.15);--blue:#3A7EBD;--bll:rgba(58,126,189,0.15);--r:10px;--rs:6px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+.app{display:flex;height:100vh}
+/* SIDEBAR */
+.sidebar{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-w{font-family:'DM Serif Display',serif;font-size:18px;letter-spacing:.12em}
+.logo-s{font-size:10px;color:var(--text3);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.nav{flex:1;padding:10px;display:flex;flex-direction:column;gap:2px}
+.nav-sec{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);padding:10px 10px 5px}
+.nb{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--rs);border:none;background:none;color:var(--text2);font-size:12.5px;cursor:pointer;text-align:left;width:100%;font-family:inherit;transition:all .15s}
+.nb:hover{background:var(--bg3);color:var(--text)}
+.nb.on{background:var(--pkl);color:var(--pink)}
+.nb i{width:15px;text-align:center;font-size:13px;flex-shrink:0}
+.sb-foot{padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);line-height:1.5}
+/* MAIN */
+.main{flex:1;overflow-y:auto}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(14,14,15,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:13px 26px;display:flex;align-items:center;justify-content:space-between}
+.tb-t{font-size:14px;font-weight:500}
+.tb-m{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.page{display:none;padding:26px;animation:fadeUp .2s ease}
+.page.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.card-h{padding:11px 15px;border-bottom:1px solid var(--border);background:var(--bg3);display:flex;align-items:center;gap:9px}
+.card-ic{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.card-t{font-size:13px;font-weight:500;flex:1}
+.card-b{padding:13px 15px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stk{display:flex;flex-direction:column;gap:12px}
+/* BADGES */
+.bdg{font-size:11px;font-weight:500;padding:3px 10px;border-radius:999px}
+.bp{background:var(--pkl);color:#993556}
+.bg2b{background:var(--grl);color:#085041}
+.ba{background:var(--aml);color:#633806}
+.bw{background:rgba(220,80,60,.15);color:#A32D2D}
+.bb{background:var(--bll);color:#0C447C}
+/* INPUT AREA */
+.drop-zone{border:1.5px dashed var(--border2);border-radius:var(--r);padding:28px 20px;text-align:center;background:var(--bg3);cursor:pointer;position:relative;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px}
+.drop-zone.drag{border-color:var(--pink);background:var(--pkl)}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:32px;margin-bottom:4px}
+.dz-t{font-size:14px;font-weight:500}
+.dz-s{font-size:12px;color:var(--text3)}
+.or-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text3);margin:12px 0}
+.or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--border)}
+.url-row{display:flex;gap:8px}
+.url-input{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--rs);padding:10px 13px;font-size:13px;color:var(--text);outline:none;font-family:inherit;transition:border .15s}
+.url-input:focus{border-color:var(--pink)}
+.url-input::placeholder{color:var(--text3)}
+.url-btn{padding:10px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.url-btn:hover{background:var(--bg4);color:var(--text)}
+.prev-row{display:flex;align-items:center;gap:12px;background:var(--bg4);border-radius:var(--rs);padding:12px;margin-top:10px}
+.prev-img{width:56px;height:70px;object-fit:cover;object-position:top;border-radius:var(--rs);border:1px solid var(--border);flex-shrink:0}
+.prev-name{font-size:13px;font-weight:500;margin-bottom:2px}
+.prev-sub{font-size:11px;color:var(--text3)}
+.clr-btn{margin-left:auto;font-size:11px;padding:4px 10px;background:none;border:1px solid var(--border2);border-radius:var(--rs);color:var(--text3);cursor:pointer}
+.sample-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.sbtn{font-size:11px;padding:4px 12px;background:var(--bg4);border:1px solid var(--border2);border-radius:999px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.sbtn:hover{border-color:var(--pink);color:var(--pink)}
+.run-btn{width:100%;margin-top:14px;padding:12px;background:var(--pink);border:none;border-radius:var(--rs);color:white;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.run-btn:hover{opacity:.88}
+.run-btn:disabled{opacity:.45;cursor:not-allowed}
+/* LOADING */
+.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:36px 20px;text-align:center}
+.spinner{width:34px;height:34px;border:2px solid var(--border2);border-top-color:var(--pink);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-t{font-size:13px;font-weight:500}
+.loading-s{font-size:12px;color:var(--text3)}
+/* ERROR */
+.err{border-left:3px solid #C04040;border-radius:0 var(--rs) var(--rs) 0;padding:10px 14px;background:rgba(192,64,64,.1);font-size:12px;color:#E07070;display:none;line-height:1.6;margin-top:10px}
+/* RESULT */
+.result{display:none}
+.res-hd{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:15px;margin-bottom:12px}
+.res-img{width:72px;height:90px;object-fit:cover;object-position:top;border-radius:var(--rs);border:1px solid var(--border);flex-shrink:0}
+.res-name{font-size:14px;font-weight:500;margin-bottom:3px}
+.res-sub{font-size:12px;color:var(--text3);margin-bottom:9px}
+.bdg-row{display:flex;gap:6px;flex-wrap:wrap}
+.score-wrap{text-align:right;flex-shrink:0}
+.big-sc{font-size:28px;font-weight:300;line-height:1}
+.score-bar-track{width:100px;height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:6px}
+.score-bar-fill{height:100%;border-radius:3px}
+/* CONFIDENCE ROWS */
+.cr{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.cn{font-size:12px;color:var(--text);min-width:148px}
+.ct{flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.cf{height:100%;border-radius:2px}
+.cv{font-size:12px;font-weight:500;min-width:32px;text-align:right}
+.cw{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--aml);color:#633806;white-space:nowrap}
+/* SUBLINE */
+.sl-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px;text-align:center;position:relative}
+.sl-rec{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--pink);color:white;font-size:10px;padding:1px 10px;border-radius:999px;white-space:nowrap}
+.sl-n{font-size:11px;font-weight:500;margin-bottom:2px}
+.sl-s{font-size:24px;font-weight:300;margin-bottom:5px}
+.sl-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-bottom:5px}
+.sl-bf{height:100%;border-radius:2px}
+.sl-note{font-size:10px;color:var(--text3);text-align:left;line-height:1.5}
+/* POTENTIAL */
+.pot-c{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:12px;text-align:center}
+.pot-l{font-size:10px;color:var(--text3);margin-bottom:5px}
+.pot-s{font-size:22px;font-weight:300;margin-bottom:5px}
+.pot-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.pot-bf{height:100%;border-radius:2px}
+/* ALERTS */
+.al{border-left:3px solid;border-radius:0 var(--rs) var(--rs) 0;padding:9px 13px;font-size:12px;line-height:1.65;margin-bottom:8px}
+.al-g{border-color:var(--green);background:var(--grl);color:#3ECFA0}
+.al-a{border-color:var(--amber);background:var(--aml);color:#E8A53A}
+.al-r{border-color:#C04040;background:rgba(192,64,64,.1);color:#E07070}
+.al-p{border-color:var(--pink);background:var(--pkl);color:#E88AAF}
+/* HORIZONTAL BARS (analytics) */
+.hb{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.hbl{font-size:11px;color:var(--text2);min-width:115px;text-align:right}
+.hbt{flex:1;height:7px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.hbf{height:100%;border-radius:3px}
+.hbv{font-size:11px;font-weight:500;min-width:30px}
+/* METRIC CARDS */
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.ml{font-size:11px;color:var(--text3);margin-bottom:5px}
+.mv{font-size:24px;font-weight:300}
+.ms{font-size:11px;color:var(--text3);margin-top:2px}
+/* TAG CHIPS */
+.tc{display:inline-flex;font-size:11px;padding:4px 11px;border-radius:999px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);margin:3px;cursor:default;transition:all .15s}
+.tc:hover{border-color:var(--pink);color:var(--pink);background:var(--pkl)}
+/* ACTION BUTTONS */
+.act-btn{padding:8px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.act-btn:hover{background:var(--bg4);color:var(--text)}
+.act-btn-p{background:var(--pink);border-color:var(--pink);color:white}
+.act-btn-p:hover{opacity:.88}
+/* UPGRADE */
+.up-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.up-h{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.up-t{font-size:13px;font-weight:500;flex:1}
+.up-b{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.now-b{font-size:12px;color:var(--text2);padding:8px 11px;background:rgba(192,64,64,.07);border-left:3px solid #C04040;border-radius:0 var(--rs) var(--rs) 0;line-height:1.6}
+.fix-b{font-size:12px;color:#5ECBA8;padding:8px 11px;background:var(--grl);border-left:3px solid var(--green);border-radius:0 var(--rs) var(--rs) 0;line-height:1.6}
+.final-b{background:linear-gradient(135deg,var(--pkl),var(--grl));border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:16px;margin-top:12px}
+.fn{font-size:40px;font-weight:300;line-height:1;flex-shrink:0}
+/* COPY CARDS */
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:10px}
+.cc-h{display:flex;align-items:center;gap:9px;padding:11px 14px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.cc-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.cc-b{padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+.c-bl{background:var(--bg3);border-radius:var(--rs);padding:10px 12px}
+.c-lb{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.c-tx{font-size:13px;color:var(--text2);line-height:1.65}
+.c-tx em{font-style:normal;font-weight:500;color:var(--text)}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-w">AIRSPACE</div>
+    <div class="logo-s">AI Tagging System</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">工作流程</div>
+    <button class="nb on" onclick="go('pg-tag')">
+      <span>①</span> AI 貼標分析
+    </button>
+    <button class="nb" onclick="go('pg-copy')">
+      <span>②</span> 導購文案範例
+    </button>
+    <button class="nb" onclick="go('pg-upgrade')">
+      <span>③</span> 升級至 100 分
+    </button>
+    <div class="nav-sec">資料庫</div>
+    <button class="nb" onclick="go('pg-tagdb')">
+      <span>🗂</span> 標籤資料庫
+    </button>
+    <button class="nb" onclick="go('pg-analytics')">
+      <span>📊</span> 暢銷滯銷分析
+    </button>
+    <div class="nav-sec">範例分析</div>
+    <button class="nb" onclick="go('pg-e1')"><span>🤍</span> 白色亞麻套裝</button>
+    <button class="nb" onclick="go('pg-e2')"><span>🤎</span> 咖啡棕馬甲套裝</button>
+    <button class="nb" onclick="go('pg-e3')"><span>🩵</span> 挖背扭結襯衫</button>
+    <button class="nb" onclick="go('pg-e4')"><span>🩶</span> 撞色一字領上衣</button>
+    <button class="nb" onclick="go('pg-e5')"><span>💗</span> 白色綁帶抽皺上衣</button>
+  </nav>
+  <div class="sb-foot">AIRSPACE_標籤資料庫_v1.1.1<br><span style="color:var(--text3)">2026 · 商控課</span></div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="tb-t">AIRSPACE AI 商品貼標系統</div>
+    <div class="tb-m"><div class="dot"></div>系統運作中 · 四大維度 · 支線評分</div>
+  </div>
+
+  <!-- PAGE: AI 貼標分析 -->
+  <div class="page on" id="pg-tag">
+    <div style="margin-bottom:20px">
+      <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">AI 商品貼標</div>
+      <div style="font-size:13px;color:var(--text2)">上傳商品圖片或輸入網址，AI 自動分析四大維度並輸出完整報告</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">輸入商品</div></div>
+      <div class="card-b">
+        <div class="drop-zone" id="dz" ondragover="doDragOver(event)" ondragleave="doDragLeave(event)" ondrop="doDrop(event)">
+          <input type="file" id="fi" accept="image/*" onchange="onFile(event)" />
+          <div class="dz-icon">🖼️</div>
+          <div class="dz-t">拖曳圖片到這裡，或點擊選擇檔案</div>
+          <div class="dz-s">支援 JPG、PNG、WebP · 也可以按 Ctrl+V 貼上截圖</div>
+        </div>
+
+        <div class="or-row">或輸入商品圖片網址</div>
+        <div class="url-row">
+          <input type="text" class="url-input" id="urlIn" placeholder="https://images.airspaceonline.com/photo/..." />
+          <button class="url-btn" onclick="loadUrl()">載入圖片</button>
+        </div>
+
+        <div id="prevRow" style="display:none" class="prev-row">
+          <img id="prevImg" class="prev-img" src="" alt="預覽" />
+          <div style="flex:1">
+            <div class="prev-name" id="prevName">已載入圖片</div>
+            <div class="prev-sub">點擊下方按鈕開始分析</div>
+          </div>
+          <button class="clr-btn" onclick="clearAll()">✕ 清除</button>
+        </div>
+
+        <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--text3)">快速範例：</span>
+          <button class="sbtn" onclick="loadUrl('https://images.airspaceonline.com/photo/2610121016/4a7312c7-b4c0-4df0-b329-27409ac764fe.webp','蕾絲套裝')">蕾絲套裝</button>
+          <button class="sbtn" onclick="loadUrl('https://images.airspaceonline.com/photo/2610828001/292f833b-04ba-4566-bc86-4fb50006c401.webp','背心連身衣')">背心連身</button>
+          <button class="sbtn" onclick="loadUrl('https://images.airspaceonline.com/photo/2610724005/99c3fb6d-0117-4290-8b66-90a6dbe1d1a7.webp','西裝洋裝')">西裝洋裝</button>
+        </div>
+
+        <button class="run-btn" id="runBtn" onclick="runAnalysis()">
+          ✦ AI 自動分析貼標
+        </button>
+        <div class="err" id="errBox"></div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="card" id="loadCard" style="display:none">
+      <div class="loading" style="display:flex">
+        <div class="spinner"></div>
+        <div class="loading-t">AI 正在分析商品圖片</div>
+        <div class="loading-s" id="loadStep">讀取圖片 · 比對標籤資料庫…</div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultWrap" class="result">
+      <div class="res-hd">
+        <img id="resImg" class="res-img" src="" alt="" onerror="this.style.display='none'" />
+        <div style="flex:1">
+          <div class="res-name" id="resName"></div>
+          <div class="res-sub" id="resSub"></div>
+          <div class="bdg-row" id="resBadges"></div>
+        </div>
+        <div class="score-wrap">
+          <div class="big-sc" id="bigSc"></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">/ 100 分</div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="scBar"></div></div>
+        </div>
+      </div>
+
+      <div class="g2" id="dimGrid"></div>
+
+      <div class="card">
+        <div class="card-h"><div class="card-t">支線適配評分</div></div>
+        <div class="card-b"><div class="g4" id="slGrid"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div class="card-t">銷售潛力評估</div></div>
+        <div class="card-b"><div class="g4" id="potGrid"></div></div>
+      </div>
+
+      <div id="alertsWrap"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <button class="act-btn act-btn-p" onclick="exportTxt()">⬇ 匯出貼標紀錄</button>
+        <button class="act-btn" onclick="clearAll()">分析新商品</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: 導購文案 -->
+  <div class="page" id="pg-copy">
+    <div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">導購文案方向</div><div style="font-size:13px;color:var(--text2)">以白色亞麻上下件套裝為例 · 三個差異化策略</div></div>
+    <div class="cc"><div class="cc-h"><div class="cc-n" style="background:var(--grl);color:#085041">01</div><div style="flex:1"><div style="font-size:13px;font-weight:500">痛點解決型 — 直攻「顯腿長」視覺焦慮</div><div style="font-size:11px;color:var(--text3)">主圖大字、Reels 開場、商品頁標題</div></div></div><div class="cc-b"><div class="c-bl"><div class="c-lb">主標題</div><div class="c-tx">不用踩高跟鞋，<em>腿長比例直接改寫</em></div></div><div class="c-bl"><div class="c-lb">副標</div><div class="c-tx">高腰打褶闊腿褲讓視覺腰線上移 10cm，配上短版背心露出黃金比例腰腹段——<em>從腰開始，腿就沒有終點</em>。</div></div><div class="c-bl"><div class="c-lb">IG 貼文短版</div><div class="c-tx">155cm 穿上去有 168 的腿。不騙你，是版型的功勞。<br>高腰 + 短版上衣 = 最省力的顯腿長公式 📐</div></div></div></div>
+    <div class="cc"><div class="cc-h"><div class="cc-n" style="background:var(--pkl);color:#72243E">02</div><div style="flex:1"><div style="font-size:13px;font-weight:500">身形解決型 — 點名「假胯寬」痛點</div><div style="font-size:11px;color:var(--text3)">商品詳情頁、小紅書圖文、粉專貼文</div></div></div><div class="cc-b"><div class="c-bl"><div class="c-lb">主標題</div><div class="c-tx">胯寬星人的<em>終結款</em>，穿上直接換人生</div></div><div class="c-bl"><div class="c-lb">小紅書痛點破解版</div><div class="c-tx">【胯寬怎麼穿不顯？】答案就是這條褲。<br>・闊腿從大腿最寬處直線落地 ✓<br>・高腰遮住骨盆上緣 ✓<br>・不緊繃，坐下來也不夾 ✓</div></div></div></div>
+    <div class="cc"><div class="cc-h"><div class="cc-n" style="background:var(--bll);color:#0C447C">03</div><div style="flex:1"><div style="font-size:13px;font-weight:500">場景氛圍型 — 用「度假感」拉高品牌溢價</div><div style="font-size:11px;color:var(--text3)">IG 主圖、Look book、官網 banner</div></div></div><div class="cc-b"><div class="c-bl"><div class="c-lb">主標題</div><div class="c-tx">巴里島的風，<em>你的腿</em></div></div><div class="c-bl"><div class="c-lb">IG Caption</div><div class="c-tx">沒有行程的週末也要穿得像有計劃。<br>這套的腰線和腿線，負責幫你安排好一切 🌿</div></div></div></div>
+    <div class="al al-a">A/B 測試建議：方向 01（公式感）+ 方向 02（假胯寬）同時跑，數據決定下季文案策略。</div>
+  </div>
+
+  <!-- PAGE: 升級 100 分 -->
+  <div class="page" id="pg-upgrade">
+    <div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">升級至 100 分</div><div style="font-size:13px;color:var(--text2)">以白色綁帶抽皺上衣（91分）為例</div></div>
+    <div class="g4" style="margin-bottom:12px">
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:13px;text-align:center"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">① 結構</div><div style="font-size:21px;font-weight:300;color:var(--green);margin-bottom:3px">96</div><div style="font-size:10px;color:var(--green)">幾乎滿 ✓</div></div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:13px;text-align:center"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">② 辣度</div><div style="font-size:21px;font-weight:300;color:var(--amber);margin-bottom:3px">83</div><div style="font-size:10px;color:var(--amber)">缺口 12</div></div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:13px;text-align:center"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">③ 特色</div><div style="font-size:21px;font-weight:300;color:var(--amber);margin-bottom:3px">88</div><div style="font-size:10px;color:var(--amber)">缺口 12</div></div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:13px;text-align:center"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">④ 導購</div><div style="font-size:21px;font-weight:300;color:var(--blue);margin-bottom:3px">95</div><div style="font-size:10px;color:var(--blue)">缺口 5</div></div>
+    </div>
+    <div class="up-card"><div class="up-h"><span class="bdg bw">P1 必改</span><div class="up-t">加入一體式胸墊（Built-in Pads）</div><span class="bdg" style="background:var(--grl);color:#085041">+6 分</span></div><div class="up-b"><div class="now-b">現況：深 U 領 + 純白面料，顧客需自配隱形內衣，白色透感是退換貨率最高的款型組合。</div><div class="fix-b"><strong style="color:#7DDFC0">改法：</strong>前胸加入可拆式一體式胸墊，同時解決白色透感 + 無支撐雙重疑慮。</div></div></div>
+    <div class="up-card"><div class="up-h"><span class="bdg ba">P2 強烈建議</span><div class="up-t">開發深色版本（黑色 or 巧克力棕）</div><span class="bdg" style="background:var(--grl);color:#085041">+4 分</span></div><div class="up-b"><div class="now-b">現況：只有純白一色，演算法曝光池窄，夜間約會場景使用率低。</div><div class="fix-b"><strong style="color:#7DDFC0">改法：</strong>增開黑色或深棕。同款換深色辣度感知立刻提升，不需要重新打版。</div></div></div>
+    <div class="up-card"><div class="up-h"><span class="bdg ba">P3 建議改</span><div class="up-t">綁帶升級：改為蕾絲或緞帶材質</div><span class="bdg" style="background:var(--grl);color:#085041">+3 分</span></div><div class="up-b"><div class="now-b">現況：棉質繩帶在縮圖中識別度弱，主圖點擊率受影響。</div><div class="fix-b"><strong style="color:#7DDFC0">改法：</strong>換白色蕾絲帶或緞面絲帶，縮圖亮點更清晰，同時新增蕾絲細節標籤擴大曝光池。</div></div></div>
+    <div class="up-card"><div class="up-h"><span class="bdg bb">P4 加分項</span><div class="up-t">導購補強：加「包覆副乳」文案鉤子</div><span class="bdg" style="background:var(--grl);color:#085041">+2 分</span></div><div class="up-b"><div class="now-b">現況：橡筋全身抽皺的包覆副乳效果沒有被點出來。</div><div class="fix-b"><strong style="color:#7DDFC0">改法：</strong>加「橡筋全身收束，自然包覆副乳」文案，不需改款，只需加文案貼標。</div></div></div>
+    <div class="final-b"><div class="fn">100</div><div><div style="font-size:14px;font-weight:500;margin-bottom:4px">加胸墊（+6）+ 深色版（+4）+ 蕾絲綁帶（+3）+ 副乳文案（+2）</div><div style="font-size:13px;color:var(--text2);line-height:1.7">91 分現況 → <strong style="color:var(--text)">100 分主力款</strong><br>P1+P2 完成即達 95 分以上，預估 LADY 支線完銷率前 10%</div></div></div>
+  </div>
+
+  <!-- PAGE: 標籤資料庫 -->
+  <div class="page" id="pg-tagdb">
+    <div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">標籤資料庫</div><div style="font-size:13px;color:var(--text2)">AIRSPACE_標籤資料庫_v1.1.1 · 全分類瀏覽</div></div>
+    <div class="card"><div class="card-h"><div class="card-t">版型 · 整體廓形</div></div><div class="card-b" id="tc0"></div></div>
+    <div class="g2"><div class="card"><div class="card-h"><div class="card-t">領型</div></div><div class="card-b" id="tc1"></div></div><div class="card"><div class="card-h"><div class="card-t">袖型</div></div><div class="card-b" id="tc2"></div></div></div>
+    <div class="g2"><div class="card"><div class="card-h"><div class="card-t">下裝結構</div></div><div class="card-b" id="tc3"></div></div><div class="card"><div class="card-h"><div class="card-t">表面裝飾</div></div><div class="card-b" id="tc4"></div></div></div>
+    <div class="card"><div class="card-h"><div class="card-t">面料材質</div></div><div class="card-b" id="tc5"></div></div>
+    <div class="g2"><div class="card"><div class="card-h"><div class="card-t">視覺效果 · 導購</div></div><div class="card-b" id="tc6"></div></div><div class="card"><div class="card-h"><div class="card-t">露膚部位 · 辣度</div></div><div class="card-b" id="tc7"></div></div></div>
+    <div class="g2"><div class="card"><div class="card-h"><div class="card-t">風格標籤</div></div><div class="card-b" id="tc8"></div></div><div class="card"><div class="card-h"><div class="card-t">場景標籤</div></div><div class="card-b" id="tc9"></div></div></div>
+  </div>
+
+  <!-- PAGE: 暢銷滯銷分析 -->
+  <div class="page" id="pg-analytics">
+    <div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">暢銷滯銷分析</div><div style="font-size:13px;color:var(--text2)">2026 W9–W16 · 標籤 × 完銷率交叉分析</div></div>
+    <div class="g4" style="margin-bottom:12px">
+      <div class="mc"><div class="ml">分析 SKU 數</div><div class="mv">1,000</div><div class="ms">W9–W16 2026</div></div>
+      <div class="mc"><div class="ml">平均第6週完銷率</div><div class="mv">4.1x</div><div class="ms">&gt;3x 為優良</div></div>
+      <div class="mc"><div class="ml">高信心貼標比例</div><div class="mv">73%</div><div class="ms">信心值 ≥80%</div></div>
+      <div class="mc"><div class="ml">待人工審核</div><div class="mv">27%</div><div class="ms">需商控課確認</div></div>
+    </div>
+    <div class="card"><div class="card-h"><div class="card-t">版型標籤 × 平均完銷率</div></div><div class="card-b">
+      <div class="hb"><div class="hbl">內外件套裝</div><div class="hbt"><div class="hbf" style="width:83%;background:var(--pink)"></div></div><div class="hbv" style="color:var(--pink)">5.8x</div></div>
+      <div class="hb"><div class="hbl">一體式胸墊款</div><div class="hbt"><div class="hbf" style="width:77%;background:var(--pink)"></div></div><div class="hbv" style="color:var(--pink)">5.4x</div></div>
+      <div class="hb"><div class="hbl">合身 / 緊身</div><div class="hbt"><div class="hbf" style="width:70%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">4.9x</div></div>
+      <div class="hb"><div class="hbl">短版 Crop</div><div class="hbt"><div class="hbf" style="width:67%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">4.7x</div></div>
+      <div class="hb"><div class="hbl">A 擺</div><div class="hbt"><div class="hbf" style="width:60%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">4.2x</div></div>
+      <div class="hb"><div class="hbl">Oversized</div><div class="hbt"><div class="hbf" style="width:44%;background:var(--amber)"></div></div><div class="hbv" style="color:var(--amber)">3.1x</div></div>
+      <div class="hb"><div class="hbl">荷葉邊</div><div class="hbt"><div class="hbf" style="width:34%;background:#C04040"></div></div><div class="hbv" style="color:#E07070">2.4x</div></div>
+    </div></div>
+    <div class="card" style="margin-top:10px"><div class="card-h"><div class="card-t">面料材質 × 平均完銷率</div></div><div class="card-b">
+      <div class="hb"><div class="hbl">緞面</div><div class="hbt"><div class="hbf" style="width:74%;background:var(--pink)"></div></div><div class="hbv" style="color:var(--pink)">5.2x</div></div>
+      <div class="hb"><div class="hbl">網紗 / 蕾絲</div><div class="hbt"><div class="hbf" style="width:69%;background:var(--pink)"></div></div><div class="hbv" style="color:var(--pink)">4.8x</div></div>
+      <div class="hb"><div class="hbl">雪紡</div><div class="hbt"><div class="hbf" style="width:64%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">4.5x</div></div>
+      <div class="hb"><div class="hbl">天絲 / 莫代爾</div><div class="hbt"><div class="hbf" style="width:56%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">3.9x</div></div>
+      <div class="hb"><div class="hbl">棉麻</div><div class="hbt"><div class="hbf" style="width:51%;background:var(--green)"></div></div><div class="hbv" style="color:var(--green)">3.6x</div></div>
+      <div class="hb"><div class="hbl">牛仔</div><div class="hbt"><div class="hbf" style="width:43%;background:var(--amber)"></div></div><div class="hbv" style="color:var(--amber)">3.0x</div></div>
+    </div></div>
+    <div class="al al-g" style="margin-top:10px">暢銷洞察：附胸墊款在 AS 支線平均完銷率達 5.8x，比全品類平均高 41%，是最強轉單標籤。</div>
+    <div class="al al-a">注意：荷葉邊設計 W11–W14 連續 4 週完銷率低於 2.5x，建議下季減少開發比例。</div>
+    <div class="al al-r">滯銷警示：大尺碼牛仔系列完銷率僅 3.0x，但 3XL 缺貨率高，建議調整備貨結構而非削減款式。</div>
+  </div>
+
+  <!-- EXAMPLE PAGES (simplified) -->
+  <div class="page" id="pg-e1"><div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">白色亞麻上下件套裝</div><div style="font-size:13px;color:var(--text2)">TW2621824007 · 首選 AS Main Line · 86/100</div></div><div class="al al-g">強項：顯腿長（98%）+ 顯腰線（96%）+ 修飾假胯寬（88%）三個導購標籤同時命中。場景適用廣度高，度假 / 日常通勤雙場景。</div><div class="al al-a" style="margin-top:8px">注意：整體辣度偏低（低辣），文案主攻「顯腿長公式」與「修飾假胯寬」痛點，面料成分待商控課確認（棉麻信心值 78%）。</div></div>
+  <div class="page" id="pg-e2"><div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">咖啡棕排扣馬甲套裝</div><div style="font-size:13px;color:var(--text2)">首選 CHIC.A · 91/100</div></div><div class="al al-g">強項：排扣馬甲 × 蕾絲邊撞色是 CHIC.A 最強識別廓形，露腰 + 顯腿長組合預估完銷率優於支線均值。</div><div class="al al-r" style="margin-top:8px">風險：平口無胸墊，建議商品頁加入「內搭建議」降低退換貨率。</div></div>
+  <div class="page" id="pg-e3"><div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">微透感扭結挖背襯衫</div><div style="font-size:13px;color:var(--text2)">白色 / 粉藍雙色 · 首選 AS Main Line · 86/100</div></div><div class="al al-g">社群亮點：「正面低調，背面驚喜」在 Reels 轉身鏡頭有天然傳播力，IG 高互動設計。</div><div class="al al-a" style="margin-top:8px">面料成分待確認（信心值 72%）。P1 加胸墊 +8 分是最高 CP 值改款。</div></div>
+  <div class="page" id="pg-e4"><div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">灰白撞色一字領短版上衣</div><div style="font-size:13px;color:var(--text2)">首選 AS Main Line · 93/100 — 目前最高分款</div></div><div class="al al-g">導購轉換力 95 分。顯肩線 + 顯鎖骨 + 顯腰線 + 視覺豐胸 + 顯瘦，五個導購標籤同時命中，難得的「全解決款」。</div><div class="al al-r" style="margin-top:8px">唯一缺口：無胸墊。加胸墊可衝刺滿分。</div></div>
+  <div class="page" id="pg-e5"><div style="margin-bottom:20px"><div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:5px">白色綁帶橡筋抽皺短版上衣</div><div style="font-size:13px;color:var(--text2)">首選 LADY · 91/100 · 暢銷機率最高</div></div><div class="al al-g">視覺豐胸（98%）+ 顯腰線（97%）+ 不顯小腹（95%）同時命中，LADY 支線預估前 15%。胸前綁帶拍攝互動性強，社群天然流量加成。</div><div class="al al-a" style="margin-top:8px">P1 加胸墊 +6 分 / P2 開深色 +4 分 / P3 蕾絲綁帶 +3 分 / P4 副乳文案 +2 分 → 100 分主力款。</div></div>
+
+</main>
+</div>
+
+<script>
+// ── Navigation ──
+const pages=['pg-tag','pg-copy','pg-upgrade','pg-tagdb','pg-analytics','pg-e1','pg-e2','pg-e3','pg-e4','pg-e5'];
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  const i=pages.indexOf(id);
+  if(i>=0)document.querySelectorAll('.nb')[i].classList.add('on');
+  window.scrollTo(0,0);
+}
+
+// ── Tag DB ──
+const tagData={
+  tc0:['A擺','H型','X型','繭型','Oversized','緊身','合身','內外件套裝','上下件套裝'],
+  tc1:['圓領','V領','深V領','一字領','方領','桃心領','立領','高領','平口','繞頸','U領','水滴領','襯衫領','西裝領','海軍領','連帽','翻領'],
+  tc2:['無袖','蓋袖','短袖','七分袖','長袖','插肩袖','連身袖','泡泡袖','燈籠袖','喇叭袖','挖肩','削肩','斜肩'],
+  tc3:['高腰','中腰','低腰','直筒褲','闊腿褲','窄管褲','靴型褲','喇叭褲','鉛筆裙','百褶裙','魚尾裙','蛋糕裙','開衩'],
+  tc4:['刺繡','釘珠','亮片','貼布繡','蕾絲','毛邊','滾邊','荷葉邊','流蘇','壓褶','抽褶','打褶','植絨','打攬(橡筋抽皺)'],
+  tc5:['棉','棉麻','羊毛','羊絨','尼龍','莫代爾','天絲','羅馬布','緞面','皮','牛仔','蕾絲','網紗','雪紡','空氣層','毛織','金屬光澤','涼感','發熱','襯衫料'],
+  tc6:['顯鎖骨','顯肩線','顯腰線','顯瘦','顯胸','顯腿長','側收副乳','不顯小腹','包覆副乳','提臀','修飾假胯寬','黃金比例','視覺豐胸'],
+  tc7:['露鎖骨','露肩','露背','露腰','露腹','微露胸','小露胸','露腿','低露','中露','高露'],
+  tc8:['Boho','法式','小香','性感','韓系','甜美','仙女','簡約','女神','Y2K','機能風','老錢風','美式復古','學院風'],
+  tc9:['職場通勤','休閒運動','度假風','約會','音樂祭','婚禮穿搭','派對/夜店']
+};
+Object.entries(tagData).forEach(([id,arr])=>{
+  const el=document.getElementById(id);
+  if(el)el.innerHTML=arr.map(t=>`<span class="tc">${t}</span>`).join('');
+});
+
+// ── State ──
+let imgData=null, lastRes=null;
+
+// ── Drag & Drop ──
+function doDragOver(e){e.preventDefault();document.getElementById('dz').classList.add('drag')}
+function doDragLeave(){document.getElementById('dz').classList.remove('drag')}
+function doDrop(e){e.preventDefault();document.getElementById('dz').classList.remove('drag');const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))readFile(f)}
+function onFile(e){const f=e.target.files[0];if(f)readFile(f)}
+function readFile(f){
+  const r=new FileReader();
+  r.onload=ev=>{
+    const b64=ev.target.result.split(',')[1];
+    imgData={type:'base64',value:b64,mt:f.type||'image/jpeg'};
+    showPreview(ev.target.result,f.name);
+  };
+  r.readAsDataURL(f);
+}
+
+// ── Paste ──
+document.addEventListener('paste',e=>{
+  for(const item of(e.clipboardData?.items||[])){
+    if(item.type.startsWith('image/')){readFile(item.getAsFile());break}
+  }
+});
+
+// ── URL ──
+function loadUrl(url,name){
+  const u=url||document.getElementById('urlIn').value.trim();
+  if(!u)return;
+  document.getElementById('urlIn').value=u;
+  imgData={type:'url',value:u};
+  showPreview(u,name||'商品圖片');
+}
+
+function showPreview(src,name){
+  document.getElementById('prevImg').src=src;
+  document.getElementById('prevName').textContent=name||'商品圖片';
+  document.getElementById('prevRow').style.display='flex';
+  hideErr();
+  document.getElementById('resultWrap').style.display='none';
+}
+
+function clearAll(){
+  imgData=null;
+  document.getElementById('urlIn').value='';
+  document.getElementById('prevRow').style.display='none';
+  document.getElementById('fi').value='';
+  document.getElementById('resultWrap').style.display='none';
+  hideErr();
+}
+
+function hideErr(){document.getElementById('errBox').style.display='none'}
+function showErr(msg){const e=document.getElementById('errBox');e.innerHTML=msg;e.style.display='block'}
+
+// ── Run ──
+async function runAnalysis(){
+  if(!imgData){showErr('請先上傳商品圖片或輸入圖片網址');return}
+  setLoading(true);hideErr();
+  document.getElementById('resultWrap').style.display='none';
+  try{
+    const res=await callAPI();
+    lastRes=res;
+    renderResult(res);
+  }catch(err){
+    showErr('分析失敗：'+err.message);
+  }finally{setLoading(false)}
+}
+
+function setLoading(on){
+  document.getElementById('loadCard').style.display=on?'block':'none';
+  document.getElementById('runBtn').disabled=on;
+  document.getElementById('runBtn').textContent=on?'分析中…':'✦ AI 自動分析貼標';
+  if(on){
+    const steps=['讀取商品圖片…','比對標籤資料庫…','計算四大維度信心值…','評估支線適配度…','生成完整分析報告…'];
+    let i=0;
+    window._st=setInterval(()=>document.getElementById('loadStep').textContent=steps[Math.min(i++,steps.length-1)],1300);
+  }else{clearInterval(window._st)}
+}
+
+// ── API call via local proxy ──
+async function callAPI(){
+  const sys=`你是 AIRSPACE 時尚電商 AI 貼標系統。分析商品圖片，輸出繁體中文純 JSON（不要任何 markdown 標記）。
+AIRSPACE 四條支線：AS Main Line（Boho-French 法式氣質，中低辣）、CHIC.A（都會時髦法式辣味，合身硬挺，中高辣）、LADY（柔美曲線優雅甜美，U領桃心領荷葉邊）、A+（大尺碼包覆修飾）。
+輸出格式：{"productName":"商品名稱15-25字","overallScore":數字,"overallNote":"一句話評分原因","reviewStatus":"自動通過或待人工審核","sublines":{"AS":{"score":數字,"note":"理由10字內"},"CHICA":{"score":數字,"note":"理由10字內"},"LADY":{"score":數字,"note":"理由10字內"},"APLUS":{"score":數字,"note":"理由10字內"}},"dimensions":{"structure":{"name":"結構 Structure","tags":[{"tag":"標籤","confidence":數字,"needsReview":布林}]},"sexy":{"name":"辣度 Sexy Level","tags":[{"tag":"標籤","confidence":數字,"needsReview":布林}]},"features":{"name":"特色 Features","tags":[{"tag":"標籤","confidence":數字,"needsReview":布林}]},"selling":{"name":"導購 Direct Selling","tags":[{"tag":"標籤","confidence":數字,"needsReview":布林}]}},"potential":{"bestseller":數字,"visual":數字,"conversion":數字,"versatility":數字},"alerts":[{"type":"green或amber或red","text":"洞察文字"}],"upgradeHints":[]}`;
+
+  let imgContent;
+  if(imgData.type==='base64'){
+    imgContent={type:'image',source:{type:'base64',media_type:imgData.mt,data:imgData.value}};
+  }else{
+    imgContent={type:'image',source:{type:'url',url:imgData.value}};
+  }
+
+  const payload={
+    model:'claude-sonnet-4-20250514',
+    max_tokens:1500,
+    system:sys,
+    messages:[{role:'user',content:[imgContent,{type:'text',text:'分析這款商品圖片，依照 AIRSPACE 四大維度完整貼標並評分。只輸出 JSON。'}]}]
+  };
+
+  // Use local proxy to avoid CORS
+  const resp=await fetch('/api/analyze',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  });
+
+  if(!resp.ok){
+    const e=await resp.json().catch(()=>({}));
+    throw new Error(e.error?.message||`HTTP ${resp.status}`);
+  }
+  const data=await resp.json();
+  const raw=data.content?.map(b=>b.text||'').join('').trim();
+  const clean=raw.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,'').trim();
+  return JSON.parse(clean);
+}
+
+// ── Render ──
+function renderResult(r){
+  const src=imgData.type==='url'?imgData.value:`data:${imgData.mt};base64,${imgData.value}`;
+  document.getElementById('resImg').src=src;
+  document.getElementById('resName').textContent=r.productName||'商品分析結果';
+  const slNames={AS:'AS Main Line',CHICA:'CHIC.A',LADY:'LADY',APLUS:'A+'};
+  const top=Object.entries(r.sublines||{}).sort((a,b)=>b[1].score-a[1].score)[0];
+  document.getElementById('resSub').textContent=top?`首選支線：${slNames[top[0]]||top[0]} · ${top[1].score} 分`:'';
+  const br=document.getElementById('resBadges');
+  br.innerHTML='';
+  if(top){const b=document.createElement('span');b.className='bdg bp';b.textContent='首選：'+slNames[top[0]];br.appendChild(b)}
+  const sb=document.createElement('span');sb.className=r.reviewStatus==='自動通過'?'bdg bg2b':'bdg ba';sb.textContent=r.reviewStatus||'';br.appendChild(sb);
+  const sc=r.overallScore||0;
+  document.getElementById('bigSc').textContent=sc;
+  const bar=document.getElementById('scBar');
+  bar.style.width=sc+'%';bar.style.background=sc>=85?'#1D9E75':sc>=70?'#C4861A':'#C04040';
+  const dColors={structure:'#1D9E75',sexy:'#D4537E',features:'#C4861A',selling:'#3A7EBD'};
+  const dBg={structure:'rgba(29,158,117,.15)',sexy:'rgba(212,83,126,.15)',features:'rgba(196,134,26,.15)',selling:'rgba(58,126,189,.15)'};
+  const dNums={structure:'①',sexy:'②',features:'③',selling:'④'};
+  const dg=document.getElementById('dimGrid');dg.innerHTML='';
+  Object.entries(r.dimensions||{}).forEach(([k,dim])=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML=`<div class="card-h"><div class="card-ic" style="background:${dBg[k]};color:${dColors[k]}">${dNums[k]||'·'}</div><div class="card-t">${dim.name||k}</div></div><div class="card-b">${(dim.tags||[]).map(t=>`<div class="cr"><div class="cn">${t.tag}</div><div class="ct"><div class="cf" style="width:${t.confidence}%;background:${dColors[k]}"></div></div><div class="cv" style="color:${dColors[k]}">${t.confidence}%</div>${t.needsReview?'<span class="cw">待審</span>':''}</div>`).join('')}</div>`;
+    dg.appendChild(c);
+  });
+  const slC={AS:'#D4537E',CHICA:'#3A7EBD',LADY:'#D4537E',APLUS:'#1D9E75'};
+  const sg=document.getElementById('slGrid');sg.innerHTML='';
+  Object.entries(r.sublines||{}).sort((a,b)=>b[1].score-a[1].score).forEach(([k,v],i)=>{
+    const isR=i===0;const col=slC[k]||'#888';
+    const d=document.createElement('div');d.className='sl-card';if(isR)d.style.borderColor='#D4537E';
+    d.innerHTML=`${isR?'<div class="sl-rec">首選</div>':''}<div class="sl-n">${slNames[k]||k}</div><div class="sl-s" style="color:${col}">${v.score}</div><div class="sl-bar"><div class="sl-bf" style="width:${v.score}%;background:${col}"></div></div><div class="sl-note">${v.note||''}</div>`;
+    sg.appendChild(d);
+  });
+  const pL={bestseller:'暢銷潛力',visual:'視覺吸睛',conversion:'導購轉換',versatility:'場景廣度'};
+  const pC={bestseller:'#D4537E',visual:'#3A7EBD',conversion:'#1D9E75',versatility:'#C4861A'};
+  const pg=document.getElementById('potGrid');pg.innerHTML='';
+  Object.entries(r.potential||{}).forEach(([k,v])=>{
+    const col=pC[k]||'#888';const d=document.createElement('div');d.className='pot-c';
+    d.innerHTML=`<div class="pot-l">${pL[k]||k}</div><div class="pot-s" style="color:${col}">${v}</div><div class="pot-bar"><div class="pot-bf" style="width:${v}%;background:${col}"></div></div>`;
+    pg.appendChild(d);
+  });
+  const aw=document.getElementById('alertsWrap');aw.innerHTML='';
+  const ac={green:'al al-g',amber:'al al-a',red:'al al-r'};
+  (r.alerts||[]).forEach(a=>{const d=document.createElement('div');d.className=ac[a.type]||'al al-a';d.textContent=a.text;aw.appendChild(d)});
+  if((r.upgradeHints||[]).length){const d=document.createElement('div');d.className='al al-p';d.textContent='改款建議：'+r.upgradeHints.join('；');aw.appendChild(d)}
+  document.getElementById('resultWrap').style.display='block';
+  document.getElementById('resultWrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ── Export ──
+function exportTxt(){
+  if(!lastRes)return;
+  const sln={AS:'AS Main Line',CHICA:'CHIC.A',LADY:'LADY',APLUS:'A+'};
+  const top=Object.entries(lastRes.sublines||{}).sort((a,b)=>b[1].score-a[1].score)[0];
+  let t=`AIRSPACE AI 貼標紀錄\n${'='.repeat(30)}\n`;
+  t+=`商品名稱：${lastRes.productName}\n首選支線：${sln[top?.[0]]||'-'}\n綜合分數：${lastRes.overallScore}/100\n審核狀態：${lastRes.reviewStatus}\n\n`;
+  Object.entries(lastRes.dimensions||{}).forEach(([,d])=>{
+    t+=`【${d.name}】\n`;
+    (d.tags||[]).forEach(tg=>t+=`  ${tg.tag}（${tg.confidence}%）${tg.needsReview?' ⚠待審核':''}\n`);t+='\n';
+  });
+  t+=`【支線適配】\n`;
+  Object.entries(lastRes.sublines||{}).forEach(([k,v])=>t+=`  ${sln[k]||k}：${v.score}分 - ${v.note}\n`);
+  t+=`\n匯出時間：${new Date().toLocaleString('zh-TW')}\n`;
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'}));
+  a.download=`AIRSPACE_貼標_${Date.now()}.txt`;a.click();
+}
+</script>
+</body>
+</html>
